@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Dev Card Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --container-bg: #161b22;
+            --text-main: #f0f6fc;
+            --text-muted: #8b949e;
+            --accent: #238636;
+            --accent-hover: #2ea043;
+            --border: #30363d;
+            --error: #f85149;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 {
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #f0f6fc, #8b949e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subheading {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 2rem;
+            background: var(--container-bg);
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: border-color 0.3s;
+        }
+
+        .input-group:focus-within {
+            border-color: #58a6ff;
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 12px 16px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 160, 67, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background-color: var(--border);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #result-area {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .actions-group {
+            display: none;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .action-btn {
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #30363d;
+            border-color: #8b949e;
+        }
+
+        /* Skeleton Pulse Animation */
+        .skeleton {
+            width: 400px;
+            height: 250px;
+            background: var(--container-bg);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            display: none;
+        }
+
+        .skeleton::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .card-wrapper {
+            animation: slideUpFade 0.6s ease-out;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        #error-msg {
+            color: var(--error);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .input-group { flex-direction: column; }
+            .skeleton { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>GitHub Dev Card</h1>
+        <p class="subheading">Enter any public GitHub username</p>
+
+        <div class="input-group">
+            <input type="text" id="username" placeholder="e.g. torvalds" onkeydown="if(event.key==='Enter') generateCard()">
+            <button id="gen-btn" onclick="generateCard()">Generate Card</button>
+        </div>
+
+        <div id="error-msg"></div>
+
+        <div id="result-area">
+            <div id="skeleton" class="skeleton"></div>
+            <div id="card-container" class="card-wrapper"></div>
+            
+            <div id="actions" class="actions-group">
+                <button id="share-btn" class="action-btn" onclick="copyURL()">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5zm-8.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm11 5.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>
+                    Copy Link
+                </button>
+                <button class="action-btn" onclick="downloadHTML()">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V4.5h-2z"/></svg>
+                    Download HTML
+                </button>
+                <button class="action-btn" id="png-btn" onclick="downloadPNG()">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.502 7V1.5a1.5 1.5 0 0 1 1.5-1.5h11a1.5 1.5 0 0 1 1.5 1.5V7a.5.5 0 0 1-1 0V1.5a.5.5 0 0 0-.5-.5h-11a.5.5 0 0 0-.5.5V7a.5.5 0 0 1-1 0zM4 4a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm5 0a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5V8zm1.5 4.5h4a.5.5 0 0 0 0-1h-4a.5.5 0 0 0 0 1z"/></svg>
+                    Download PNG
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = "${BACKEND_URL}";
+        let currentCardURL = '';
+        let currentCardHTML = '';
+        let currentUsername = '';
+
+        async function generateCard() {
+            const usernameInput = document.getElementById('username');
+            const username = usernameInput.value.trim();
+            const genBtn = document.getElementById('gen-btn');
+            const skeleton = document.getElementById('skeleton');
+            const cardContainer = document.getElementById('card-container');
+            const actions = document.getElementById('actions');
+            const errorMsg = document.getElementById('error-msg');
+
+            if (!username) return;
+            currentUsername = username;
+
+            // Reset UI
+            errorMsg.style.display = 'none';
+            cardContainer.innerHTML = '';
+            actions.style.display = 'none';
+            skeleton.style.display = 'block';
+            genBtn.disabled = true;
+            genBtn.innerText = 'Analyzing...';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    skeleton.style.display = 'none';
+                    cardContainer.innerHTML = data.card_html;
+                    currentCardHTML = data.card_html;
+                    
+                    // Construct full URL
+                    currentCardURL = `${BACKEND_URL}${data.card_url}`;
+                    actions.style.display = 'flex';
+                } else {
+                    throw new Error(data.detail || 'Failed to generate card');
+                }
+            } catch (err) {
+                skeleton.style.display = 'none';
+                errorMsg.innerText = `Error: ${err.message}`;
+                errorMsg.style.display = 'block';
+            } finally {
+                genBtn.disabled = false;
+                genBtn.innerText = 'Generate Card';
+            }
+        }
+
+        function copyURL() {
+            if (!currentCardURL) return;
+            navigator.clipboard.writeText(currentCardURL);
+            const shareBtn = document.getElementById('share-btn');
+            const originalHTML = shareBtn.innerHTML;
+            shareBtn.innerText = 'Copied!';
+            setTimeout(() => {
+                shareBtn.innerHTML = originalHTML;
+            }, 2000);
+        }
+
+        function downloadHTML() {
+            if (!currentCardHTML) return;
+            const blob = new Blob([currentCardHTML], { type: 'text/html' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentUsername}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        async function downloadPNG() {
+            const cardElement = document.querySelector('#card-container > div');
+            if (!cardElement) return;
+
+            const btn = document.getElementById('png-btn');
+            const originalHTML = btn.innerHTML;
+            btn.innerText = 'Capturing...';
+
+            try {
+                const canvas = await html2canvas(cardElement, {
+                    backgroundColor: null,
+                    useCORS: true,
+                    scale: 2
+                });
+                
+                const url = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${currentUsername}.png`;
+                a.click();
+            } catch (err) {
+                console.error('PNG export failed', err);
+                alert('PNG Export failed. High quality images may be blocked.');
+            } finally {
+                btn.innerHTML = originalHTML;
+            }
+        }
+    </script>
+</body>
+</html>
